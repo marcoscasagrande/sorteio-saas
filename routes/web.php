@@ -1,19 +1,27 @@
 <?php
 
+use App\Http\Controllers\Admin\AuditLogController as AdminAuditLogController;
 use App\Http\Controllers\Admin\DashboardController as AdminDashboardController;
+use App\Http\Controllers\Admin\PlanController as AdminPlanController;
 use App\Http\Controllers\Admin\ReportController as AdminReportController;
 use App\Http\Controllers\Admin\SettingsController as AdminSettingsController;
 use App\Http\Controllers\Admin\UserController as AdminUserController;
 use App\Http\Controllers\Auth\AuthenticatedSessionController;
 use App\Http\Controllers\Auth\RegisteredUserController;
+use App\Http\Controllers\Auth\TwoFactorChallengeController;
 use App\Http\Controllers\GiveawayController;
 use App\Http\Controllers\HomeController;
 use App\Http\Controllers\InstagramOAuthController;
 use App\Http\Controllers\MercadoPagoWebhookController;
+use App\Http\Controllers\SeoController;
 use Illuminate\Support\Facades\Route;
 
 // Home pública
 Route::get('/', [HomeController::class, 'index'])->name('home');
+
+// SEO técnico
+Route::get('/sitemap.xml', [SeoController::class, 'sitemap'])->name('sitemap');
+Route::get('/robots.txt', [SeoController::class, 'robots'])->name('robots');
 
 // Página pública de comprovação do sorteio (link que o organizador
 // compartilha com a audiência — não exige login)
@@ -25,6 +33,10 @@ Route::middleware('guest')->group(function () {
     Route::post('/registrar', [RegisteredUserController::class, 'store']);
     Route::get('/login', [AuthenticatedSessionController::class, 'create'])->name('login');
     Route::post('/login', [AuthenticatedSessionController::class, 'store']);
+
+    // 2FA do admin — acessível só depois de validar a senha (ver controller)
+    Route::get('/dois-fatores', [TwoFactorChallengeController::class, 'create'])->name('two-factor.challenge');
+    Route::post('/dois-fatores', [TwoFactorChallengeController::class, 'store'])->name('two-factor.verify');
 });
 
 Route::post('/logout', [AuthenticatedSessionController::class, 'destroy'])
@@ -46,6 +58,7 @@ Route::middleware('auth')->group(function () {
     Route::get('/sorteios/{giveaway}', [GiveawayController::class, 'show'])->name('giveaways.show');
     Route::get('/sorteios/{giveaway}/pagar', [GiveawayController::class, 'pay'])->name('giveaways.pay');
     Route::post('/sorteios/{giveaway}/sortear', [GiveawayController::class, 'draw'])->name('giveaways.draw');
+    Route::post('/sorteios/{giveaway}/resortear', [GiveawayController::class, 'redraw'])->name('giveaways.redraw');
 });
 
 // Área administrativa
@@ -59,4 +72,11 @@ Route::middleware(['auth', 'admin'])->prefix('admin')->name('admin.')->group(fun
 
     Route::get('/configuracoes', [AdminSettingsController::class, 'edit'])->name('settings.edit');
     Route::post('/configuracoes', [AdminSettingsController::class, 'update'])->name('settings.update');
+
+    Route::resource('planos', AdminPlanController::class)
+        ->parameters(['planos' => 'plan'])
+        ->only(['index', 'create', 'store', 'edit', 'update', 'destroy'])
+        ->names('plans');
+
+    Route::get('/logs', [AdminAuditLogController::class, 'index'])->name('audit-logs.index');
 });

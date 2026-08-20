@@ -3,6 +3,8 @@
 @php
     $siteName = \App\Models\Setting::get(\App\Models\Setting::SITE_NAME, 'SorteioSaaS');
     $tagline = \App\Models\Setting::get(\App\Models\Setting::SITE_TAGLINE, 'Sorteios no Instagram com transparência');
+    $limiteGratis = \App\Models\Setting::get(\App\Models\Setting::FREE_COMMENT_LIMIT, '100');
+    $precoAvulso = \App\Models\Setting::get(\App\Models\Setting::PRICE_PER_GIVEAWAY, '9.99');
 @endphp
 
 @section('title', $siteName.' — Sorteie comentários do Instagram com prova pública')
@@ -20,7 +22,7 @@
             Cole o link do post, puxe todos os comentários automaticamente e sorteie
             em segundos. O resultado sai com hash público de auditoria — qualquer
             seguidor pode conferir que ninguém manipulou o sorteio.
-            Grátis até 100 participantes; acima disso, libere via Pix por R$ 9,99.
+            Grátis até {{ $limiteGratis }} participantes; acima disso, libere via Pix por R$ {{ number_format((float) $precoAvulso, 2, ',', '.') }}.
         </p>
         <div class="flex gap-3">
             <a href="{{ route('register') }}" class="btn-primary">Criar meu primeiro sorteio</a>
@@ -66,6 +68,32 @@
         <p class="text-sm text-ink/60">Resultado com hash público de auditoria — sua audiência confirma sozinha que foi justo.</p>
     </div>
 </div>
+
+@php $planos = \App\Models\Plan::ativos()->get(); @endphp
+@if ($planos->isNotEmpty())
+    <div class="mt-16">
+        <h2 class="text-2xl font-display font-semibold text-center mb-8">Planos</h2>
+        <div class="grid grid-cols-1 @if($planos->count() >= 3) md:grid-cols-3 @elseif($planos->count() == 2) md:grid-cols-2 @endif gap-6">
+            @foreach ($planos as $plano)
+                <div class="ticket p-6 flex flex-col {{ $plano->is_featured ? 'ring-2 ring-teal' : '' }}">
+                    @if ($plano->is_featured)
+                        <span class="badge-gold mb-3 self-start">Mais popular</span>
+                    @endif
+                    <h3 class="font-display font-semibold text-lg mb-1">{{ $plano->name }}</h3>
+                    <p class="text-2xl font-display font-semibold mb-1">
+                        R$ {{ number_format($plano->price, 2, ',', '.') }}
+                        <span class="text-sm text-ink/40 font-sans font-normal">/ {{ $plano->periodoLabel() }}</span>
+                    </p>
+                    <p class="text-xs text-ink/50 mb-4">{{ $plano->limiteDescricao() }}</p>
+                    @if ($plano->description)
+                        <p class="text-sm text-ink/60 mb-4 flex-1">{{ $plano->description }}</p>
+                    @endif
+                    <a href="{{ route('register') }}" class="btn-secondary text-center">Começar</a>
+                </div>
+            @endforeach
+        </div>
+    </div>
+@endif
 
 <div class="mt-16 ticket p-8 text-center">
     <h2 class="text-2xl font-display font-semibold mb-2">Pronto para o próximo sorteio?</h2>

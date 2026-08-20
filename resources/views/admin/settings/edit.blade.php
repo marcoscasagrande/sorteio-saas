@@ -63,6 +63,27 @@
     </section>
 
     <section class="bg-card rounded-xl border border-ink/10 p-6">
+        <h2 class="font-display font-semibold mb-1">Cobrança do sorteio avulso</h2>
+        <p class="text-sm text-ink/50 mb-5">
+            Valores usados quando o organizador não tem um plano — cobrança avulsa por Pix.
+        </p>
+
+        <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+            <div>
+                <label class="block text-sm font-medium mb-1">Limite grátis (comentários)</label>
+                <input type="number" name="free_comment_limit" min="1" value="{{ old('free_comment_limit', $settings['free_comment_limit']) }}" required
+                       class="w-full border border-ink/15 rounded-lg px-3 py-2">
+                <p class="text-xs text-ink/40 mt-1">Acima deste número, o sorteio precisa ser pago para ser liberado.</p>
+            </div>
+            <div>
+                <label class="block text-sm font-medium mb-1">Valor cobrado (R$)</label>
+                <input type="number" step="0.01" min="0" name="price_per_giveaway" value="{{ old('price_per_giveaway', $settings['price_per_giveaway']) }}" required
+                       class="w-full border border-ink/15 rounded-lg px-3 py-2">
+            </div>
+        </div>
+    </section>
+
+    <section class="bg-card rounded-xl border border-ink/10 p-6">
         <h2 class="font-display font-semibold mb-1">Mercado Pago</h2>
         <p class="text-sm text-ink/50 mb-5">
             Chaves de produção da sua conta Mercado Pago, usadas para gerar as cobranças Pix.

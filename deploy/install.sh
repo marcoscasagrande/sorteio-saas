@@ -11,7 +11,8 @@ if [ ! -f .env ]; then
     echo "==> Criando .env a partir do exemplo..."
     cp deploy/.env.production.example .env
     echo "    ATENÇÃO: edite o .env agora com as credenciais do banco,"
-    echo "    Mercado Pago e Instagram antes de continuar."
+    echo "    Mercado Pago, Instagram e MAIL_* (o 2FA do admin envia"
+    echo "    código por e-mail no login)."
     read -p "    Pressione ENTER quando tiver terminado de editar o .env..."
 fi
 

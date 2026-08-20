@@ -19,6 +19,8 @@ class SettingsController extends Controller
             'seo_description' => Setting::get(Setting::SEO_DESCRIPTION, 'Conecte sua conta do Instagram, cole o link do post e sorteie entre os comentários com total transparência. Grátis até 100 participantes.'),
             'mercadopago_access_token' => Setting::get(Setting::MP_ACCESS_TOKEN),
             'mercadopago_public_key' => Setting::get(Setting::MP_PUBLIC_KEY),
+            'free_comment_limit' => Setting::get(Setting::FREE_COMMENT_LIMIT, '100'),
+            'price_per_giveaway' => Setting::get(Setting::PRICE_PER_GIVEAWAY, '9.99'),
         ];
 
         return view('admin.settings.edit', compact('settings'));
@@ -33,6 +35,8 @@ class SettingsController extends Controller
             'seo_description' => ['required', 'string', 'max:300'],
             'mercadopago_access_token' => ['nullable', 'string'],
             'mercadopago_public_key' => ['nullable', 'string'],
+            'free_comment_limit' => ['required', 'integer', 'min:1'],
+            'price_per_giveaway' => ['required', 'numeric', 'min:0'],
             'logo' => ['nullable', 'image', 'max:1024'], // até 1MB
         ]);
 
@@ -43,6 +47,8 @@ class SettingsController extends Controller
             Setting::SEO_DESCRIPTION => $request->seo_description,
             Setting::MP_ACCESS_TOKEN => $request->mercadopago_access_token,
             Setting::MP_PUBLIC_KEY => $request->mercadopago_public_key,
+            Setting::FREE_COMMENT_LIMIT => $request->free_comment_limit,
+            Setting::PRICE_PER_GIVEAWAY => number_format((float) $request->price_per_giveaway, 2, '.', ''),
         ]);
 
         if ($request->hasFile('logo')) {

@@ -81,10 +81,13 @@ Em **Website > seudominio.com > SSL**, ative o Let's Encrypt (um clique).
 Isso é **obrigatório** — o webhook do Mercado Pago e o OAuth do Instagram
 exigem HTTPS.
 
-## 7. Fila em background (Supervisor)
+## 7. Fila em background (Supervisor) — OBRIGATÓRIO
 
-No plugin **Supervisor Manager**, crie um processo novo com o conteúdo de
-`deploy/supervisor-queue.conf.example` (ajuste o caminho do projeto).
+A busca de comentários do Instagram agora roda em fila. Sem o worker
+rodando, todo sorteio criado fica preso em "buscando comentários" para
+sempre. No plugin **Supervisor Manager**, crie um processo novo com o
+conteúdo de `deploy/supervisor-queue.conf.example` (ajuste o caminho do
+projeto).
 
 ## 8. Cron (agendador do Laravel)
 

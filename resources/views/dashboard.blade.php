@@ -25,11 +25,17 @@
             </div>
             <span @class([
                 'text-xs font-mono px-2 py-1 rounded',
+                'bg-ink/5 text-ink/40' => $giveaway->status === 'fetching_comments',
                 'badge-gold' => $giveaway->status === 'pending_payment',
                 'badge-teal' => $giveaway->status === 'ready',
                 'bg-ink/5 text-ink/50' => $giveaway->status === 'completed',
             ])>
-                {{ ['pending_payment' => 'aguardando pix', 'ready' => 'pronto', 'completed' => 'concluído'][$giveaway->status] }}
+                {{ [
+                    'fetching_comments' => 'buscando comentários',
+                    'pending_payment' => 'aguardando pix',
+                    'ready' => 'pronto',
+                    'completed' => 'concluído',
+                ][$giveaway->status] ?? $giveaway->status }}
             </span>
         </a>
     @empty

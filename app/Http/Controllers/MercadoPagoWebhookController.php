@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers;
 
+use App\Models\AuditLog;
 use App\Models\Payment;
 use App\Services\MercadoPagoService;
 use Illuminate\Http\Request;
@@ -37,6 +38,12 @@ class MercadoPagoWebhookController extends Controller
 
             // Libera o sorteio automaticamente
             $payment->giveaway?->update(['status' => 'ready']);
+
+            AuditLog::record(
+                'pagamento.aprovado',
+                "Pagamento #{$payment->id} aprovado via Pix (R$ {$payment->amount})",
+                $payment->user
+            );
         } elseif (in_array($status, ['rejected', 'cancelled'])) {
             $payment->update(['status' => 'rejected']);
         }

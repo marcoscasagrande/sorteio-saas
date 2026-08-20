@@ -19,6 +19,10 @@ class Setting extends Model
     const MP_ACCESS_TOKEN = 'mercadopago_access_token';
     const MP_PUBLIC_KEY = 'mercadopago_public_key';
 
+    // Regras de cobrança do sorteio avulso (fora dos planos de assinatura)
+    const FREE_COMMENT_LIMIT = 'free_comment_limit';      // acima disso, cobra
+    const PRICE_PER_GIVEAWAY = 'price_per_giveaway';       // valor cobrado pra liberar
+
     public static function get(string $key, ?string $default = null): ?string
     {
         return Cache::rememberForever("setting:{$key}", function () use ($key, $default) {

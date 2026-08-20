@@ -64,6 +64,8 @@
                 <a href="{{ route('admin.dashboard') }}" class="hover:text-white {{ request()->routeIs('admin.dashboard') ? 'text-white font-medium' : '' }}">Painel</a>
                 <a href="{{ route('admin.users.index') }}" class="hover:text-white {{ request()->routeIs('admin.users.*') ? 'text-white font-medium' : '' }}">Usuários</a>
                 <a href="{{ route('admin.reports.sales') }}" class="hover:text-white {{ request()->routeIs('admin.reports.*') ? 'text-white font-medium' : '' }}">Vendas</a>
+                <a href="{{ route('admin.plans.index') }}" class="hover:text-white {{ request()->routeIs('admin.plans.*') ? 'text-white font-medium' : '' }}">Planos</a>
+                <a href="{{ route('admin.audit-logs.index') }}" class="hover:text-white {{ request()->routeIs('admin.audit-logs.*') ? 'text-white font-medium' : '' }}">Logs</a>
                 <a href="{{ route('admin.settings.edit') }}" class="hover:text-white {{ request()->routeIs('admin.settings.*') ? 'text-white font-medium' : '' }}">Configurações</a>
             </div>
         @endif
