@@ -31,6 +31,21 @@
             <textarea name="description" rows="2" class="w-full border border-ink/15 rounded-lg px-3 py-2">{{ old('description', $plano->description) }}</textarea>
         </div>
 
+        <div>
+            <label class="block text-sm font-medium mb-1">Tipo de plano</label>
+            <select name="plan_type" id="plan_type" class="w-full border border-ink/15 rounded-lg px-3 py-2"
+                    onchange="document.getElementById('campo-moedas').classList.toggle('hidden', this.value !== 'coins')">
+                <option value="coins" @selected(old('plan_type', $plano->plan_type ?? 'coins') === 'coins')>Moedas (1 sorteio = 1 moeda)</option>
+                <option value="unlimited" @selected(old('plan_type', $plano->plan_type ?? 'coins') === 'unlimited')>Uso ilimitado</option>
+            </select>
+        </div>
+
+        <div id="campo-moedas" class="{{ old('plan_type', $plano->plan_type ?? 'coins') === 'unlimited' ? 'hidden' : '' }}">
+            <label class="block text-sm font-medium mb-1">Quantidade de moedas no pacote</label>
+            <input type="number" min="1" name="coins_amount" value="{{ old('coins_amount', $plano->coins_amount) }}"
+                   class="w-full border border-ink/15 rounded-lg px-3 py-2">
+        </div>
+
         <div class="grid grid-cols-2 gap-4">
             <div>
                 <label class="block text-sm font-medium mb-1">Preço (R$)</label>
@@ -40,18 +55,12 @@
             <div>
                 <label class="block text-sm font-medium mb-1">Período</label>
                 <select name="period" class="w-full border border-ink/15 rounded-lg px-3 py-2">
-                    @foreach (['unico' => 'Pagamento único', 'mensal' => 'Mensal', 'anual' => 'Anual'] as $valor => $rotulo)
-                        <option value="{{ $valor }}" @selected(old('period', $plano->period) === $valor)>{{ $rotulo }}</option>
+                    @foreach (['unico' => 'Pagamento único', 'mensal' => 'Mensal (30 dias)', 'anual' => 'Anual (365 dias)'] as $valor => $rotulo)
+                        <option value="{{ $valor }}" @selected(old('period', $plano->period ?? 'unico') === $valor)>{{ $rotulo }}</option>
                     @endforeach
                 </select>
+                <p class="text-xs text-ink/40 mt-1">Só importa para planos de uso ilimitado — define a duração do acesso.</p>
             </div>
-        </div>
-
-        <div>
-            <label class="block text-sm font-medium mb-1">Limite de sorteios por período</label>
-            <input type="number" min="1" name="giveaways_per_period" value="{{ old('giveaways_per_period', $plano->giveaways_per_period) }}"
-                   placeholder="Deixe em branco para ilimitado"
-                   class="w-full border border-ink/15 rounded-lg px-3 py-2">
         </div>
 
         <div class="flex gap-6">

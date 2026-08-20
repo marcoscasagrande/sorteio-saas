@@ -36,11 +36,15 @@ class MercadoPagoService
 
         $idempotencyKey = (string) Str::uuid();
 
+        $descricao = $payment->isPlanPurchase()
+            ? "Compra do plano: {$payment->plan->name}"
+            : "Liberação de sorteio #{$payment->giveaway_id}";
+
         $response = Http::withToken($this->accessToken)
             ->withHeaders(['X-Idempotency-Key' => $idempotencyKey])
             ->post("{$this->baseUrl}/v1/payments", [
                 'transaction_amount' => (float) $payment->amount,
-                'description' => "Liberação de sorteio #{$payment->giveaway_id}",
+                'description' => $descricao,
                 'payment_method_id' => 'pix',
                 'payer' => [
                     'email' => $payment->user->email,

@@ -13,6 +13,7 @@ use App\Http\Controllers\GiveawayController;
 use App\Http\Controllers\HomeController;
 use App\Http\Controllers\InstagramOAuthController;
 use App\Http\Controllers\MercadoPagoWebhookController;
+use App\Http\Controllers\PlanPurchaseController;
 use App\Http\Controllers\SeoController;
 use Illuminate\Support\Facades\Route;
 
@@ -59,6 +60,9 @@ Route::middleware('auth')->group(function () {
     Route::get('/sorteios/{giveaway}/pagar', [GiveawayController::class, 'pay'])->name('giveaways.pay');
     Route::post('/sorteios/{giveaway}/sortear', [GiveawayController::class, 'draw'])->name('giveaways.draw');
     Route::post('/sorteios/{giveaway}/resortear', [GiveawayController::class, 'redraw'])->name('giveaways.redraw');
+    Route::post('/sorteios/{giveaway}/usar-moeda', [GiveawayController::class, 'useCoin'])->name('giveaways.use-coin');
+
+    Route::get('/planos/{plan}/comprar', [PlanPurchaseController::class, 'checkout'])->name('plans.checkout');
 });
 
 // Área administrativa

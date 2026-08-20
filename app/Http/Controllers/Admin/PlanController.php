@@ -51,10 +51,18 @@ class PlanController extends Controller
         $dados = $request->validate([
             'name' => ['required', 'string', 'max:100'],
             'description' => ['nullable', 'string', 'max:500'],
+            'plan_type' => ['required', 'in:coins,unlimited'],
+            'coins_amount' => ['required_if:plan_type,coins', 'nullable', 'integer', 'min:1'],
             'price' => ['required', 'numeric', 'min:0'],
             'period' => ['required', 'in:unico,mensal,anual'],
-            'giveaways_per_period' => ['nullable', 'integer', 'min:1'],
         ]);
+
+        // Moedas não usam período (é sempre pagamento único); ilimitado não usa coins_amount
+        if ($dados['plan_type'] === 'coins') {
+            $dados['period'] = 'unico';
+        } else {
+            $dados['coins_amount'] = null;
+        }
 
         $dados['is_featured'] = $request->boolean('is_featured');
         $dados['active'] = $request->boolean('active');

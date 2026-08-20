@@ -13,9 +13,17 @@ return new class extends Migration
             $table->string('name');
             $table->text('description')->nullable();
             $table->decimal('price', 8, 2);
-            $table->enum('period', ['unico', 'mensal', 'anual'])->default('mensal');
-            // null = ilimitado
-            $table->unsignedInteger('giveaways_per_period')->nullable();
+
+            // 'coins'     — pacote pago uma vez, cada sorteio consome 1 moeda
+            // 'unlimited' — acesso ilimitado enquanto a assinatura estiver ativa
+            $table->enum('plan_type', ['coins', 'unlimited'])->default('coins');
+
+            // Usado só quando plan_type = 'coins'
+            $table->unsignedInteger('coins_amount')->nullable();
+
+            // Usado só quando plan_type = 'unlimited' — define a duração do acesso
+            $table->enum('period', ['unico', 'mensal', 'anual'])->default('unico');
+
             $table->boolean('is_featured')->default(false);
             $table->boolean('active')->default(true);
             $table->unsignedInteger('sort_order')->default(0);

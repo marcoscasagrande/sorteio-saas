@@ -7,7 +7,7 @@ use Illuminate\Database\Eloquent\Model;
 class Payment extends Model
 {
     protected $fillable = [
-        'user_id', 'giveaway_id', 'mp_payment_id', 'amount', 'status',
+        'user_id', 'giveaway_id', 'plan_id', 'mp_payment_id', 'amount', 'method', 'status',
         'qr_code', 'qr_code_base64', 'paid_at',
     ];
 
@@ -23,5 +23,15 @@ class Payment extends Model
     public function giveaway()
     {
         return $this->belongsTo(Giveaway::class);
+    }
+
+    public function plan()
+    {
+        return $this->belongsTo(Plan::class);
+    }
+
+    public function isPlanPurchase(): bool
+    {
+        return $this->plan_id !== null;
     }
 }

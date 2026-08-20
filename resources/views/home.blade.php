@@ -71,7 +71,7 @@
 
 @php $planos = \App\Models\Plan::ativos()->get(); @endphp
 @if ($planos->isNotEmpty())
-    <div class="mt-16">
+    <div class="mt-16" id="planos">
         <h2 class="text-2xl font-display font-semibold text-center mb-8">Planos</h2>
         <div class="grid grid-cols-1 @if($planos->count() >= 3) md:grid-cols-3 @elseif($planos->count() == 2) md:grid-cols-2 @endif gap-6">
             @foreach ($planos as $plano)
@@ -88,7 +88,11 @@
                     @if ($plano->description)
                         <p class="text-sm text-ink/60 mb-4 flex-1">{{ $plano->description }}</p>
                     @endif
-                    <a href="{{ route('register') }}" class="btn-secondary text-center">Começar</a>
+                    @auth
+                        <a href="{{ route('plans.checkout', $plano) }}" class="btn-secondary text-center">Comprar</a>
+                    @else
+                        <a href="{{ route('register') }}" class="btn-secondary text-center">Começar</a>
+                    @endauth
                 </div>
             @endforeach
         </div>

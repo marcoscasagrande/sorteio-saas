@@ -8,6 +8,15 @@
     <a href="{{ route('giveaways.create') }}" class="btn-primary">+ Novo sorteio</a>
 </div>
 
+<div class="flex items-center justify-between mb-6 p-4 bg-card rounded-xl border border-ink/10 text-sm">
+    @if (auth()->user()->temAcessoIlimitado())
+        <span class="badge-teal">Acesso ilimitado até {{ auth()->user()->unlimited_until->format('d/m/Y') }}</span>
+    @else
+        <span class="text-ink/60">🪙 Saldo de moedas: <span class="font-medium text-ink">{{ auth()->user()->coin_balance }}</span></span>
+    @endif
+    <a href="{{ route('home') }}#planos" class="text-teal font-medium">Ver planos</a>
+</div>
+
 @unless($temInstagramConectado)
     <div class="mb-6 p-4 bg-gold-light border border-gold/30 rounded-lg flex justify-between items-center">
         <span class="text-sm text-gold-dark">Conecte sua conta do Instagram para começar a sortear.</span>

@@ -17,11 +17,17 @@ class User extends Authenticatable
         'email_verified_at' => 'datetime',
         'password' => 'hashed',
         'two_factor_expires_at' => 'datetime',
+        'unlimited_until' => 'datetime',
     ];
 
     public function isAdmin(): bool
     {
         return $this->role === 'admin';
+    }
+
+    public function temAcessoIlimitado(): bool
+    {
+        return $this->unlimited_until && $this->unlimited_until->isFuture();
     }
 
     public function instagramTokens()

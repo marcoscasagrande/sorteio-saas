@@ -71,6 +71,7 @@ class GiveawayController extends Controller
                 'user_id' => $giveaway->user_id,
                 'giveaway_id' => $giveaway->id,
                 'amount' => (float) Setting::get(Setting::PRICE_PER_GIVEAWAY, '9.99'),
+                'method' => 'pix',
                 'status' => 'pending',
             ]);
 
@@ -78,6 +79,44 @@ class GiveawayController extends Controller
         }
 
         return view('giveaways.pay', compact('giveaway', 'payment'));
+    }
+
+    // Libera o sorteio gastando 1 moeda do saldo do usuário, sem passar pelo Pix.
+    public function useCoin(Giveaway $giveaway)
+    {
+        $this->autorizarDono($giveaway);
+
+        if (! $giveaway->needsPayment()) {
+            return redirect()->route('giveaways.show', $giveaway);
+        }
+
+        $user = $giveaway->user;
+
+        if ($user->coin_balance < 1) {
+            return back()->with('erro', 'Você não tem moedas suficientes.');
+        }
+
+        $user->decrement('coin_balance');
+
+        Payment::create([
+            'user_id' => $user->id,
+            'giveaway_id' => $giveaway->id,
+            'amount' => 0,
+            'method' => 'credit',
+            'status' => 'approved',
+            'paid_at' => now(),
+        ]);
+
+        $giveaway->update(['status' => 'ready']);
+
+        AuditLog::record(
+            'sorteio.liberado_por_moeda',
+            "Sorteio #{$giveaway->id} liberado com 1 moeda (saldo restante: {$user->coin_balance})",
+            $user
+        );
+
+        return redirect()->route('giveaways.show', $giveaway)
+            ->with('sucesso', 'Sorteio liberado com 1 moeda! Saldo restante: '.$user->coin_balance);
     }
 
     public function show(Giveaway $giveaway)

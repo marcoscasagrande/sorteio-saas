@@ -31,14 +31,22 @@ class Giveaway extends Model
         return $this->hasOne(Payment::class);
     }
 
-    // Regra de negócio central: acima do limite gratuito precisa de pagamento aprovado.
-    // O limite e o valor são configuráveis pelo admin (Setting), com fallback padrão.
+    // Regra de negócio central: acima do limite gratuito precisa de pagamento
+    // (Pix avulso ou 1 moeda) aprovado — exceto se o usuário tiver acesso
+    // ilimitado ativo (plano mensal/anual).
     public function needsPayment(): bool
     {
         $limite = (int) Setting::get(Setting::FREE_COMMENT_LIMIT, '100');
 
-        return $this->comments_count > $limite
-            && ! $this->payment()->where('status', 'approved')->exists();
+        if ($this->comments_count <= $limite) {
+            return false;
+        }
+
+        if ($this->user->temAcessoIlimitado()) {
+            return false;
+        }
+
+        return ! $this->payment()->where('status', 'approved')->exists();
     }
 
     // URL pública de comprovação (não exige login) — o hash SHA-256 funciona

@@ -13,9 +13,9 @@
         <thead class="bg-ink/5 text-left text-ink/50 font-mono text-xs uppercase">
             <tr>
                 <th class="p-3">Nome</th>
+                <th class="p-3">Tipo</th>
                 <th class="p-3">Preço</th>
-                <th class="p-3">Período</th>
-                <th class="p-3">Limite</th>
+                <th class="p-3">Detalhe</th>
                 <th class="p-3">Status</th>
                 <th class="p-3"></th>
             </tr>
@@ -24,8 +24,8 @@
             @forelse ($planos as $plano)
                 <tr>
                     <td class="p-3 font-medium">{{ $plano->name }} @if($plano->is_featured)<span class="badge-gold ml-1">destaque</span>@endif</td>
+                    <td class="p-3 text-ink/50">{{ $plano->isCoins() ? 'Moedas' : 'Ilimitado' }}</td>
                     <td class="p-3">R$ {{ number_format($plano->price, 2, ',', '.') }}</td>
-                    <td class="p-3 text-ink/50">{{ $plano->periodoLabel() }}</td>
                     <td class="p-3 text-ink/50">{{ $plano->limiteDescricao() }}</td>
                     <td class="p-3">
                         <span @class(['badge-teal' => $plano->active, 'bg-ink/5 text-ink/40 text-xs font-mono px-2 py-1 rounded' => !$plano->active])>

@@ -91,9 +91,19 @@
                 <button class="w-full btn-secondary justify-center flex">🔁 Sortear novamente</button>
             </form>
         @elseif ($giveaway->needsPayment())
-            <a href="{{ route('giveaways.pay', $giveaway) }}" class="btn-primary w-full justify-center flex" style="background-color: #C6941F">
-                Pagar Pix para liberar
-            </a>
+            <div class="space-y-3">
+                @if (auth()->user()->coin_balance > 0)
+                    <form method="POST" action="{{ route('giveaways.use-coin', $giveaway) }}">
+                        @csrf
+                        <button class="w-full btn-primary justify-center flex">
+                            🪙 Usar 1 moeda (saldo: {{ auth()->user()->coin_balance }})
+                        </button>
+                    </form>
+                @endif
+                <a href="{{ route('giveaways.pay', $giveaway) }}" class="btn-secondary w-full justify-center flex">
+                    Pagar via Pix
+                </a>
+            </div>
         @else
             <form method="POST" action="{{ route('giveaways.draw', $giveaway) }}">
                 @csrf
