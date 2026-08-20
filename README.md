@@ -2,34 +2,35 @@
 
 Código-fonte do SaaS de sorteios: Home, Login/Registro, Painel do usuário,
 Admin completo e liberação automática via Pix (Mercado Pago) para sorteios
-com mais de 100 comentários. Visual próprio (tema "bilhete premiado"),
-com CSS já compilado em `public/build/` — não depende de CDN.
+com mais de 100 comentários. Visual próprio (tema "bilhete premiado"), com
+CSS já compilado em `public/build/`.
 
-⚠️ **Uma coisa não veio pronta:** meu ambiente não tem acesso ao Packagist
-(repositório de pacotes PHP), só ao npm — então a pasta `vendor/` do Laravel
-(dependências PHP) não está incluída. Você precisa rodar `composer install`
-no servidor (é um comando só, coberto no guia de deploy).
+Este pacote já vem com **repositório git inicializado** (primeiro commit
+feito) e pronto pra instalação e atualização via Git no servidor.
 
-O CSS/JS de produção **já vêm compilados** em `public/build/` — não é
-necessário rodar `npm run build`, a menos que você altere o visual.
+👉 **Guia completo de instalação/atualização no aaPanel: `DEPLOY-AAPANEL.md`**
 
-👉 **Para instalar num servidor AWS com aaPanel, siga `DEPLOY-AAPANEL.md`** —
-guia passo a passo completo (Nginx, PHP-FPM, SSL, fila em background, cron).
+## Fluxo resumido
 
-## Resumo rápido (qualquer servidor Linux com PHP 8.2+, MySQL, Nginx/Apache)
-
+**Primeira vez:**
 ```bash
-composer install --no-dev --optimize-autoloader
-cp deploy/.env.production.example .env
-php artisan key:generate
-# edite o .env com as credenciais do banco, Mercado Pago e Instagram
-php artisan migrate
-php artisan db:seed --class=AdminSeeder
-php artisan config:cache && php artisan route:cache && php artisan view:cache
+git remote add origin https://github.com/seu-usuario/sorteio-saas.git
+git push -u origin main
+# no servidor:
+git clone https://github.com/seu-usuario/sorteio-saas.git
+bash deploy/install.sh
 ```
 
-Login padrão do admin: `admin@sorteiosaas.com` / `troque-esta-senha`
-— **troque a senha imediatamente**.
+**Toda atualização depois disso:**
+```bash
+# na sua máquina
+git add -A && git commit -m "mudança" && git push
+# no servidor
+bash deploy/deploy.sh
+```
+
+Detalhes completos, incluindo configuração de Nginx, SSL, fila e cron
+específicos do aaPanel, estão em `DEPLOY-AAPANEL.md`.
 
 ## Estrutura do que está incluído
 
@@ -37,9 +38,16 @@ Login padrão do admin: `admin@sorteiosaas.com` / `troque-esta-senha`
 - `database/migrations` + `database/seeders/AdminSeeder.php`
 - `resources/views` — todas as telas, já estilizadas
 - `resources/css/app.css` + `tailwind.config.js` — design system próprio
-- `public/build/` — CSS/JS **já compilados**
-- `deploy/` — Nginx, Supervisor, `.env` de exemplo, script de deploy
-- `DEPLOY-AAPANEL.md` — guia completo passo a passo pro aaPanel
+- `public/build/` — CSS/JS **já compilados** e versionados no git
+- `.github/workflows/build-assets.yml` — rebuilda os assets automaticamente
+  a cada push que altera `resources/`, sem precisar de Node no servidor
+- `deploy/` — Nginx, Supervisor, `.env` de exemplo, `install.sh`, `deploy.sh`
+- `DEPLOY-AAPANEL.md` — guia completo passo a passo
+
+⚠️ **Uma coisa não veio pronta:** meu ambiente não tem acesso ao Packagist,
+só ao npm — então a pasta `vendor/` do Laravel (dependências PHP) não está
+incluída nem versionada (fica no `.gitignore`, como é padrão em qualquer
+projeto Laravel). O `deploy/install.sh` roda o `composer install` por você.
 
 ## O que falta implementar (pontos com TODO no código)
 
@@ -49,7 +57,6 @@ Login padrão do admin: `admin@sorteiosaas.com` / `troque-esta-senha`
 - Lógica real de sorteio (hoje está mockada) — puxar a lista de comentários,
   aplicar filtros (menção obrigatória, remover duplicados/bots) e sortear.
 - Tela de "resetar senha" e verificação de e-mail.
-- Job agendado para renovar tokens do Instagram antes de expirar (o cron
-  já está configurado no guia de deploy — falta o Job em si).
+- Job agendado para renovar tokens do Instagram antes de expirar.
 - Você ainda precisa passar pelo **App Review da Meta** antes de liberar a
   conexão de Instagram para qualquer cliente sem cadastro manual como tester.
