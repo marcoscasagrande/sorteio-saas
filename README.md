@@ -5,32 +5,161 @@ e-mail para admins), Painel do usuário, Admin completo (usuários, relatório
 de vendas, planos, logs de auditoria, configurações gerais), sorteio com
 hash SHA-256 de auditoria, filtros de participação, múltiplos vencedores,
 re-sorteio, selo embutível, busca de comentários em fila, revelação com
-confete, e liberação automática via Pix (Mercado Pago) — tudo com preços
-e limites editáveis pelo admin.
+confete, planos por moeda ou uso ilimitado, e liberação automática via Pix
+(Mercado Pago) — tudo com preços e limites editáveis pelo admin.
 
-Este pacote já vem com **repositório git inicializado** e pronto pra
-instalação e atualização via Git no servidor.
+---
 
-👉 **Guia completo de instalação/atualização no aaPanel: `DEPLOY-AAPANEL.md`**
+## 🔑 Acesso padrão do admin
 
-## Fluxo resumido
+```
+E-mail:  admin@sorteiosaas.com
+Senha:   troque-esta-senha
+```
 
-**Primeira vez:**
+Criado automaticamente pelo `AdminSeeder` durante a instalação.
+**Troque essa senha assim que fizer o primeiro login** — vá em
+Admin > (tela de perfil, ainda não implementada — por ora, troque via
+`php artisan tinker` no servidor: `User::where('email','admin@sorteiosaas.com')->first()->update(['password' => bcrypt('sua-nova-senha')]);`).
+
+O login do admin passa por **2FA por e-mail**: depois da senha, um código
+de 6 dígitos é enviado pro e-mail cadastrado (expira em 10 min). Se o
+`MAIL_*` do `.env` ainda não estiver configurado, o código aparece no log
+da aplicação (`storage/logs/laravel.log`) em vez de travar o acesso.
+
+---
+
+## 📦 Instalação completa (servidor AWS + aaPanel)
+
+### 1. Pré-requisitos no aaPanel
+
+No painel do aaPanel, instale (App Store):
+- **Nginx** (ou OpenLiteSpeed)
+- **MySQL** 8.0
+- **PHP 8.3** (extensões: bcmath, ctype, curl, fileinfo, json, mbstring, openssl, pdo, pdo_mysql, tokenizer, xml, gd, zip)
+- **Composer**
+- **Git**
+- **Supervisor Manager** (mantém a fila rodando — obrigatório, ver abaixo)
+
+Node.js **não é necessário no servidor** — o CSS/JS já vem compilado e
+versionado no repositório.
+
+### 2. Subir o projeto pro GitHub
+
+Este pacote já vem com git inicializado e o histórico de commits pronto.
+Crie um repositório vazio no GitHub e aponte pra ele:
+
 ```bash
+cd sorteio-saas
 git remote add origin https://github.com/seu-usuario/sorteio-saas.git
 git push -u origin main
-# no servidor:
-git clone https://github.com/seu-usuario/sorteio-saas.git
+```
+
+Repositório privado? Gere um **Personal Access Token** no GitHub
+(Settings > Developer settings) pra usar como senha no clone/pull.
+
+### 3. Criar o site no aaPanel
+
+**Website > Add Site**
+- Domínio: `seudominio.com`
+- Diretório: `/www/wwwroot/seudominio.com`
+- PHP version: 8.3
+- Marque para criar o banco MySQL junto — **anote usuário e senha gerados**,
+  você vai precisar deles no passo 5
+
+### 4. Clonar o projeto no servidor
+
+Pelo terminal SSH (ou o Terminal web do próprio aaPanel):
+
+```bash
+cd /www/wwwroot
+rm -rf seudominio.com          # remove a pasta vazia criada pelo aaPanel
+git clone https://github.com/seu-usuario/sorteio-saas.git seudominio.com
+cd seudominio.com
+```
+
+### 5. Rodar a instalação
+
+```bash
 bash deploy/install.sh
 ```
 
-**Toda atualização depois disso:**
+Esse único comando faz tudo:
+1. Copia `deploy/.env.production.example` para `.env` e pausa pra você editar
+2. Roda `composer install`
+3. Gera a `APP_KEY`
+4. Ajusta permissões de `storage/` e `bootstrap/cache/`
+5. **Roda `php artisan migrate` — é aqui que as tabelas são criadas no banco**
+   (login e senha sozinhos no `.env` NÃO criam tabela nenhuma; é o `migrate`
+   que lê `database/migrations/` e monta o schema inteiro)
+6. Cria o usuário admin (`AdminSeeder`)
+7. Gera os caches de produção
+
+Quando o script pausar pedindo pra editar o `.env`, preencha pelo menos:
+- `DB_DATABASE`, `DB_USERNAME`, `DB_PASSWORD` — os que o aaPanel gerou no passo 3
+- `MAIL_*` — necessário pro código do 2FA do admin chegar por e-mail
+- `MERCADOPAGO_ACCESS_TOKEN` — opcional aqui, dá pra cadastrar depois em Admin > Configurações
+- `INSTAGRAM_CLIENT_ID` / `INSTAGRAM_CLIENT_SECRET` — quando for integrar a Graph API de verdade
+
+**Se as tabelas já existiam e você só quer rodar as migrations de novo**
+(sem reinstalar tudo), pode rodar isoladamente a qualquer momento:
+```bash
+php artisan migrate
+```
+
+### 6. Configurar o Nginx
+
+Em **Website > seudominio.com > Config File**, substitua pelo conteúdo de
+`deploy/nginx.conf.example`. O `root` precisa apontar para a pasta
+**`public/`** do projeto, não para a raiz.
+
+### 7. Emitir SSL (HTTPS) — obrigatório
+
+Em **Website > seudominio.com > SSL**, ative o Let's Encrypt (um clique).
+O webhook do Mercado Pago e o OAuth do Instagram exigem HTTPS.
+
+### 8. Fila em background (Supervisor) — obrigatório
+
+A busca de comentários do Instagram roda em fila. **Sem o worker rodando,
+todo sorteio criado fica preso em "buscando comentários" pra sempre.**
+No plugin **Supervisor Manager**, crie um processo com o conteúdo de
+`deploy/supervisor-queue.conf.example` (ajuste o caminho do projeto).
+
+### 9. Cron (agendador do Laravel)
+
+Em **Cron Jobs**, crie uma tarefa "Shell Script" a cada minuto:
+```bash
+php /www/wwwroot/seudominio.com/artisan schedule:run >> /dev/null 2>&1
+```
+
+### 10. Webhook do Mercado Pago
+
+No painel do Mercado Pago (Suas integrações > Webhooks), cadastre:
+```
+https://seudominio.com/webhooks/mercadopago
+```
+
+---
+
+## 🔄 Atualizações depois da instalação
+
 ```bash
 # na sua máquina
-git add -A && git commit -m "mudança" && git push
+git add -A && git commit -m "descreva o que mudou" && git push
 # no servidor
+cd /www/wwwroot/seudominio.com
 bash deploy/deploy.sh
 ```
+
+O `deploy.sh` põe o site em manutenção, dá `git pull`, reinstala
+dependências se `composer.json` mudou, **roda as migrations pendentes**,
+recria os caches, reinicia a fila e libera o site de novo — automático.
+
+Se você alterou `resources/` (CSS/JS/views), o GitHub Action
+(`.github/workflows/build-assets.yml`) já builda e commita os assets
+sozinho a cada push — não precisa Node no servidor.
+
+---
 
 ## O que tem no admin
 
@@ -38,89 +167,63 @@ bash deploy/deploy.sh
 - **Usuários** — lista com busca, detalhe por usuário
 - **Vendas** (`/admin/relatorio-de-vendas`) — filtro por período, faturamento,
   ticket médio, gráfico diário, lista de pagamentos
-- **Planos** (`/admin/planos`) — CRUD completo de dois tipos de plano:
-  **moedas** (pacote pago uma vez, cada sorteio consome 1 moeda) e
-  **uso ilimitado** (mensal ou anual, todo sorteio liberado automaticamente
-  enquanto ativo) — preço, quantidade de moedas e período editáveis,
-  exibidos automaticamente na Home quando ativos
-- **Logs de auditoria** (`/admin/logs`) — login, sorteios realizados/refeitos,
-  pagamentos aprovados, com filtro por ação
+- **Planos** (`/admin/planos`) — CRUD de dois tipos: **moedas** (pacote pago
+  uma vez, cada sorteio consome 1 moeda) e **uso ilimitado** (mensal ou
+  anual, todo sorteio liberado automaticamente enquanto ativo)
+- **Logs de auditoria** (`/admin/logs`) — login, sorteios, pagamentos
 - **Configurações** (`/admin/configuracoes`) — nome do site, tagline, logo,
-  SEO, **limite grátis de comentários e valor cobrado no sorteio avulso**,
-  e as chaves do Mercado Pago — tudo editável sem mexer no servidor
+  SEO, limite grátis de comentários, valor do sorteio avulso, chaves do
+  Mercado Pago — tudo editável sem mexer no servidor
 
 ## Sorteio: recursos
 
-- **Fila em background**: buscar os comentários do post roda em fila
-  (`FetchGiveawayComments`), a página do sorteio atualiza sozinha até ficar
-  pronta — não trava a requisição em posts com muitos comentários
-- **Filtros de participação**: exigir menção a N amigos, hashtag obrigatória,
-  seguir a conta — configuráveis na criação do sorteio
-- **Múltiplos vencedores** por sorteio (1 a 20)
-- **Preview dos comentários elegíveis** antes de sortear
-- **Hash SHA-256** de auditoria + link público de comprovação
-  (`/verificar/{hash}`), sem exigir login
-- **Liberação por moeda ou acesso ilimitado**: se o usuário tem saldo de
-  moedas, pode liberar o sorteio gastando 1 sem passar pelo Pix; com acesso
-  ilimitado ativo, todo sorteio libera sozinho, direto
-- **Selo HTML embutível** — o organizador copia e cola no próprio site
-- **Re-sorteio com 1 clique** — o resultado anterior fica registrado no
-  histórico, visível na página de comprovação
-- **Revelação com confete** (canvas-confetti) ao sortear
+- Fila em background pra buscar comentários (não trava a requisição)
+- Filtros de participação (menção, hashtag, seguir a conta)
+- Múltiplos vencedores por sorteio (1 a 20)
+- Preview dos comentários elegíveis antes de sortear
+- Hash SHA-256 + link público de comprovação (`/verificar/{hash}`)
+- Liberação por moeda, acesso ilimitado ou Pix avulso
+- Selo HTML embutível
+- Re-sorteio com histórico registrado
+- Revelação com confete
 
 ## Segurança
 
-- **2FA por e-mail** para contas admin — código de 6 dígitos enviado no
-  login, válido por 10 minutos (se o e-mail ainda não estiver configurado,
-  o código cai no log da aplicação em vez de travar o acesso)
-- **Logs de auditoria** para ações sensíveis (login, sorteio, pagamento)
+- 2FA por e-mail no login do admin
+- Logs de auditoria para ações sensíveis
 
 ## SEO
 
-- Título, descrição e Open Graph configuráveis por página e globalmente
-  (via admin)
-- `sitemap.xml` e `robots.txt` dinâmicos — sorteios concluídos entram
-  automaticamente no sitemap
+- Título, descrição e Open Graph configuráveis (via admin)
+- `sitemap.xml` e `robots.txt` dinâmicos
 
 ## Estrutura do que está incluído
 
 - `app/` — Models, Controllers, Middleware, Jobs, Services
 - `database/migrations` + `database/seeders/AdminSeeder.php`
 - `resources/views` — todas as telas, já estilizadas
-- `resources/js/app.js` — confete (canvas-confetti) e gráfico (Chart.js)
-- `public/build/` — CSS/JS **já compilados** e versionados no git
-- `.github/workflows/build-assets.yml` — rebuilda os assets automaticamente
-  a cada push que altera `resources/`
+- `public/build/` — CSS/JS já compilados e versionados no git
+- `.github/workflows/build-assets.yml` — rebuild automático dos assets
 - `deploy/` — Nginx, Supervisor, `.env` de exemplo, `install.sh`, `deploy.sh`
-- `DEPLOY-AAPANEL.md` — guia completo passo a passo
 
-⚠️ **Uma coisa não veio pronta:** meu ambiente não tem acesso ao Packagist,
-só ao npm — então a pasta `vendor/` do Laravel não está incluída/versionada.
-O `deploy/install.sh` roda o `composer install` por você.
-
-⚠️ **A fila precisa estar rodando** (Supervisor, já configurado no guia de
-deploy) — sem isso, sorteios ficam presos em "buscando comentários" pra
-sempre. Configure o `MAIL_*` no `.env` também, pra 2FA do admin funcionar
-por e-mail de verdade (senão o código só aparece no log).
+⚠️ **Vendor não incluído**: meu ambiente não tem acesso ao Packagist, só ao
+npm — a pasta `vendor/` do Laravel não está no pacote. `deploy/install.sh`
+roda o `composer install` por você.
 
 ## Fora do escopo por enquanto
 
-Duas sugestões da lista original não entraram porque pedem infraestrutura
-própria, maior que o resto do sistema:
-- **Vídeo de reveal para Stories** — exige geração de vídeo (ffmpeg ou
-  serviço externo), tratamento de codecs, fila dedicada
-- **Blog/CMS de conteúdo para SEO** — merece um editor de posts próprio,
-  não só uma tabela a mais
+- **Vídeo de reveal para Stories** — exige geração de vídeo (ffmpeg/serviço externo)
+- **Blog/CMS de conteúdo para SEO** — merece um editor de posts próprio
+- **Cobrança recorrente automática** dos planos ilimitados — hoje é compra
+  manual repetida (o sistema mostra a data de validade); assinatura de
+  verdade exigiria a API `preapproval` do Mercado Pago
 
-Posso montar qualquer um dos dois numa próxima rodada, se fizer sentido.
+## O que falta implementar (TODOs no código)
 
-## O que falta implementar (pontos com TODO no código)
-
-- `FetchGiveawayComments::handle()` — chamar de fato a Instagram Graph API
-  (`GET /{media-id}/comments`), com paginação, usando o token salvo em
+- `FetchGiveawayComments::handle()` — chamada real à Instagram Graph API
+  (`GET /{media-id}/comments`), com paginação, usando o token em
   `InstagramToken`. Formato esperado por comentário:
   `['username', 'text', 'mentions', 'is_follower']`
 - Tela de "resetar senha" e verificação de e-mail
-- Job agendado para renovar tokens do Instagram antes de expirar
-- App Review da Meta, antes de liberar a conexão de Instagram pra qualquer
-  cliente sem cadastro manual como tester
+- Job agendado pra renovar tokens do Instagram antes de expirar
+- App Review da Meta, antes de liberar conexão de Instagram sem tester manual
