@@ -92,12 +92,20 @@ class GiveawayController extends Controller
     {
         $this->autorizarDono($giveaway);
 
-        if ($giveaway->needsPayment()) {
-            abort(403, 'Pagamento pendente para liberar este sorteio.');
-        }
-
         if ($giveaway->status === 'completed') {
             return redirect()->route('giveaways.show', $giveaway);
+        }
+
+        // Fecha uma brecha de corrida: logo após criar o sorteio, o status
+        // é 'fetching_comments' e comments_count ainda é 0 — sem essa checagem,
+        // dava pra sortear nesse intervalo e escapar da cobrança, já que
+        // needsPayment() ainda não teria contagem real pra avaliar.
+        if ($giveaway->status !== 'ready') {
+            abort(403, 'Este sorteio ainda não está pronto para ser sorteado.');
+        }
+
+        if ($giveaway->needsPayment()) {
+            abort(403, 'Pagamento pendente para liberar este sorteio.');
         }
 
         $this->executarSorteio($giveaway);

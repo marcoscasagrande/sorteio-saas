@@ -32,6 +32,13 @@ class FetchGiveawayComments implements ShouldQueue
 
         $limite = (int) Setting::get(Setting::FREE_COMMENT_LIMIT, '100');
 
+        // Defesa extra: só atualiza se o sorteio ainda estiver esperando a
+        // busca (evita sobrescrever um estado que mudou por outro caminho
+        // enquanto o job rodava).
+        if ($this->giveaway->fresh()->status !== 'fetching_comments') {
+            return;
+        }
+
         $this->giveaway->update([
             'comments_cache' => $comentarios,
             'comments_count' => count($comentarios),
