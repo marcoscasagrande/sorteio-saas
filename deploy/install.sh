@@ -33,6 +33,7 @@ php artisan db:seed --class=AdminSeeder
 
 echo "==> Criando link de storage público..."
 php artisan storage:link
+echo "    (necessário para a logo enviada em Admin > Configurações aparecer)"
 
 echo "==> Gerando caches de produção..."
 php artisan config:cache

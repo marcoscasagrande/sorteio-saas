@@ -1,6 +1,8 @@
 <?php
 
 use App\Http\Controllers\Admin\DashboardController as AdminDashboardController;
+use App\Http\Controllers\Admin\ReportController as AdminReportController;
+use App\Http\Controllers\Admin\SettingsController as AdminSettingsController;
 use App\Http\Controllers\Admin\UserController as AdminUserController;
 use App\Http\Controllers\Auth\AuthenticatedSessionController;
 use App\Http\Controllers\Auth\RegisteredUserController;
@@ -12,6 +14,10 @@ use Illuminate\Support\Facades\Route;
 
 // Home pública
 Route::get('/', [HomeController::class, 'index'])->name('home');
+
+// Página pública de comprovação do sorteio (link que o organizador
+// compartilha com a audiência — não exige login)
+Route::get('/verificar/{hash}', [GiveawayController::class, 'verify'])->name('giveaways.verify');
 
 // Auth (visitante)
 Route::middleware('guest')->group(function () {
@@ -45,6 +51,12 @@ Route::middleware('auth')->group(function () {
 // Área administrativa
 Route::middleware(['auth', 'admin'])->prefix('admin')->name('admin.')->group(function () {
     Route::get('/', [AdminDashboardController::class, 'index'])->name('dashboard');
+
     Route::get('/usuarios', [AdminUserController::class, 'index'])->name('users.index');
     Route::get('/usuarios/{user}', [AdminUserController::class, 'show'])->name('users.show');
+
+    Route::get('/relatorio-de-vendas', [AdminReportController::class, 'sales'])->name('reports.sales');
+
+    Route::get('/configuracoes', [AdminSettingsController::class, 'edit'])->name('settings.edit');
+    Route::post('/configuracoes', [AdminSettingsController::class, 'update'])->name('settings.update');
 });

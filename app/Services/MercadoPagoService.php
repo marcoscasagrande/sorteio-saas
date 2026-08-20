@@ -3,18 +3,26 @@
 namespace App\Services;
 
 use App\Models\Payment;
+use App\Models\Setting;
 use Illuminate\Support\Facades\Http;
 use Illuminate\Support\Str;
 
 class MercadoPagoService
 {
     protected string $baseUrl = 'https://api.mercadopago.com';
-    protected string $accessToken;
+    protected ?string $accessToken;
 
     public function __construct()
     {
-        // Defina MERCADOPAGO_ACCESS_TOKEN no seu .env (token de PRODUÇÃO, não o de teste)
-        $this->accessToken = config('services.mercadopago.access_token');
+        // Prioridade: chave cadastrada no admin (banco) > .env como fallback.
+        // Isso permite trocar a chave sem precisar mexer no servidor.
+        $this->accessToken = Setting::get(Setting::MP_ACCESS_TOKEN)
+            ?: config('services.mercadopago.access_token');
+    }
+
+    public function estaConfigurado(): bool
+    {
+        return filled($this->accessToken);
     }
 
     /**
@@ -22,6 +30,10 @@ class MercadoPagoService
      */
     public function criarCobrancaPix(Payment $payment): array
     {
+        if (! $this->estaConfigurado()) {
+            throw new \RuntimeException('Access Token do Mercado Pago não configurado. Cadastre em Admin > Configurações.');
+        }
+
         $idempotencyKey = (string) Str::uuid();
 
         $response = Http::withToken($this->accessToken)

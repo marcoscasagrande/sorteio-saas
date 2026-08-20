@@ -8,7 +8,7 @@ class Giveaway extends Model
 {
     protected $fillable = [
         'user_id', 'instagram_post_url', 'instagram_media_id', 'comments_count',
-        'winner_username', 'result_hash', 'status', 'drawn_at',
+        'winner_username', 'winner_comment', 'result_hash', 'status', 'drawn_at',
     ];
 
     protected $casts = [
@@ -30,5 +30,14 @@ class Giveaway extends Model
     {
         return $this->comments_count > 100
             && ! $this->payment()->where('status', 'approved')->exists();
+    }
+
+    // URL pública de comprovação (não exige login) — o hash SHA-256 funciona
+    // como prova de que o resultado não foi alterado depois do sorteio.
+    public function verificationUrl(): ?string
+    {
+        return $this->result_hash
+            ? route('giveaways.verify', $this->result_hash)
+            : null;
     }
 }

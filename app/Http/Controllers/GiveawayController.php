@@ -30,15 +30,15 @@ class GiveawayController extends Controller
         $user = $request->user();
 
         // Aqui entraria a chamada real à Graph API do Instagram para buscar
-        // media_id e contar os comentários do post. Deixei mockado com um
-        // valor de exemplo — troque pela chamada real ao endpoint /{media-id}/comments.
-        $commentsCount = $this->buscarQuantidadeDeComentarios($request->instagram_post_url, $user);
+        // media_id e a lista de comentários. Deixei mockado — troque pela
+        // chamada real ao endpoint /{media-id}/comments (ver método abaixo).
+        $comentarios = $this->buscarComentarios($request->instagram_post_url, $user);
 
         $giveaway = Giveaway::create([
             'user_id' => $user->id,
             'instagram_post_url' => $request->instagram_post_url,
-            'comments_count' => $commentsCount,
-            'status' => $commentsCount > 100 ? 'pending_payment' : 'ready',
+            'comments_count' => count($comentarios),
+            'status' => count($comentarios) > 100 ? 'pending_payment' : 'ready',
         ]);
 
         if ($giveaway->needsPayment()) {
@@ -60,7 +60,7 @@ class GiveawayController extends Controller
 
     public function pay(Giveaway $giveaway)
     {
-        $this->authorize('view', $giveaway); // ver AuthServiceProvider / Policy
+        $this->autorizarDono($giveaway);
         $payment = $giveaway->payment()->latest()->first();
 
         return view('giveaways.pay', compact('giveaway', 'payment'));
@@ -68,36 +68,76 @@ class GiveawayController extends Controller
 
     public function show(Giveaway $giveaway)
     {
+        $this->autorizarDono($giveaway);
+
         return view('giveaways.show', compact('giveaway'));
     }
 
     // Executa o sorteio em si (só permitido se status = ready)
     public function draw(Giveaway $giveaway)
     {
+        $this->autorizarDono($giveaway);
+
         if ($giveaway->needsPayment()) {
             abort(403, 'Pagamento pendente para liberar este sorteio.');
         }
 
-        // Lógica real: buscar lista de comentários via Graph API, aplicar
-        // filtros (menção obrigatória, remover duplicados/bots), sortear
-        // aleatoriamente e gerar hash público de auditoria.
-        $vencedor = '@exemplo_vencedor';
-        $hash = hash('sha256', $giveaway->id.$vencedor.now());
+        if ($giveaway->status === 'completed') {
+            return redirect()->route('giveaways.show', $giveaway);
+        }
+
+        // Lógica real: buscar a lista de comentários já salva/cacheada deste
+        // sorteio via Graph API, aplicar filtros (menção obrigatória, remover
+        // duplicados/bots) e sortear aleatoriamente entre os elegíveis.
+        $comentarios = $this->buscarComentarios($giveaway->instagram_post_url, $giveaway->user);
+        $sorteado = ! empty($comentarios)
+            ? $comentarios[array_rand($comentarios)]
+            : ['username' => '@participante_exemplo', 'text' => 'Eu quero! 🎉'];
+
+        // Hash público de auditoria: qualquer pessoa pode recalcular esse
+        // SHA-256 e confirmar que o resultado não foi alterado depois do sorteio.
+        $payload = $giveaway->id.'|'.$sorteado['username'].'|'.$sorteado['text'].'|'.now()->toIso8601String();
+        $hash = hash('sha256', $payload);
 
         $giveaway->update([
-            'winner_username' => $vencedor,
+            'winner_username' => $sorteado['username'],
+            'winner_comment' => $sorteado['text'],
             'result_hash' => $hash,
             'status' => 'completed',
             'drawn_at' => now(),
         ]);
 
-        return redirect()->route('giveaways.show', $giveaway);
+        return redirect()->route('giveaways.show', $giveaway)
+            ->with('just_drawn', true);
     }
 
-    private function buscarQuantidadeDeComentarios(string $url, $user): int
+    // Página pública de comprovação — não exige login. É o link que o
+    // organizador compartilha com a audiência pra provar que o sorteio
+    // não foi manipulado.
+    public function verify(string $hash)
     {
-        // TODO: substituir por chamada real à Instagram Graph API
-        // usando o access_token salvo em $user->instagramTokens
-        return 0;
+        $giveaway = Giveaway::where('result_hash', $hash)
+            ->where('status', 'completed')
+            ->firstOrFail();
+
+        return view('giveaways.verify', compact('giveaway'));
+    }
+
+    private function autorizarDono(Giveaway $giveaway): void
+    {
+        if ($giveaway->user_id !== auth()->id() && ! auth()->user()->isAdmin()) {
+            abort(403);
+        }
+    }
+
+    /**
+     * TODO: substituir por chamada real à Instagram Graph API
+     * GET /{media-id}/comments usando o access_token salvo em
+     * $user->instagramTokens, com paginação até esgotar os comentários.
+     * Retorna um array de ['username' => ..., 'text' => ...].
+     */
+    private function buscarComentarios(string $url, $user): array
+    {
+        return [];
     }
 }
