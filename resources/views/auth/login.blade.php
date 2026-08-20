@@ -33,6 +33,9 @@
     </form>
 
     <p class="text-sm text-ink/50 mt-4">
+        <a href="{{ route('password.request') }}" class="text-teal font-medium">Esqueceu a senha?</a>
+    </p>
+    <p class="text-sm text-ink/50 mt-1">
         Não tem conta? <a href="{{ route('register') }}" class="text-teal font-medium">Criar agora</a>
     </p>
 </div>

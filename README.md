@@ -161,6 +161,56 @@ sozinho a cada push — não precisa Node no servidor.
 
 ---
 
+## ✉️ E-mail na AWS — leia antes de configurar o `MAIL_*`
+
+Se o seu servidor é uma instância **EC2 da AWS** (o que costuma acontecer
+por trás do aaPanel), configurar e-mail é diferente de um servidor comum:
+
+**A AWS bloqueia a porta 25 (SMTP direto) por padrão** em toda instância
+EC2, pra evitar spam saindo da própria rede. Isso significa que:
+- Um SMTP genérico configurado na porta 25 vai falhar silenciosamente
+- Você precisa usar a **porta 587** (submission com TLS) com um provedor
+  de e-mail transacional — não dá pra só apontar pro seu servidor de e-mail
+  comum como faria numa VPS qualquer
+
+**Recomendado: Amazon SES**
+1. No console da AWS, abra o **SES** (Simple Email Service)
+2. Verifique seu domínio ou e-mail remetente (SES > Verified identities)
+3. Gere **credenciais SMTP** específicas em SES > SMTP Settings > "Create
+   SMTP credentials" — são diferentes das suas chaves de acesso normais da AWS
+4. Preencha no `.env`:
+   ```
+   MAIL_MAILER=smtp
+   MAIL_HOST=email-smtp.SEU-REGIAO.amazonaws.com
+   MAIL_PORT=587
+   MAIL_USERNAME=<usuário SMTP gerado pelo SES>
+   MAIL_PASSWORD=<senha SMTP gerada pelo SES>
+   MAIL_ENCRYPTION=tls
+   MAIL_FROM_ADDRESS=contato@seudominio.com
+   ```
+5. **Atenção ao modo sandbox**: contas novas do SES só enviam pra e-mails
+   verificados manualmente, até você pedir liberação de produção
+   (SES > Account dashboard > "Request production access" — é gratuito,
+   leva algumas horas pra aprovar)
+
+Sem isso configurado corretamente, tanto o **2FA do admin** quanto o
+**"esqueci minha senha"** continuam funcionando pro fluxo em si, mas o
+e-mail não chega — o código/link cai no `storage/logs/laravel.log` em vez
+de ser entregue.
+
+## 🔓 Esqueci minha senha
+
+Já implementado — fluxo padrão do Laravel:
+- `/esqueci-senha` — usuário informa o e-mail, recebe um link válido por
+  60 minutos (`/redefinir-senha/{token}?email=...`)
+- Mensagem de confirmação sempre igual, exista ou não o e-mail cadastrado —
+  evita que alguém descubra quais e-mails têm conta
+- Toda solicitação e toda redefinição ficam registradas em Admin > Logs
+
+Requer a mesma configuração de `MAIL_*` da seção acima.
+
+---
+
 ## O que tem no admin
 
 - **Painel** — métricas gerais
@@ -224,6 +274,6 @@ roda o `composer install` por você.
   (`GET /{media-id}/comments`), com paginação, usando o token em
   `InstagramToken`. Formato esperado por comentário:
   `['username', 'text', 'mentions', 'is_follower']`
-- Tela de "resetar senha" e verificação de e-mail
+- Verificação de e-mail (confirmar que o e-mail do usuário existe de fato)
 - Job agendado pra renovar tokens do Instagram antes de expirar
 - App Review da Meta, antes de liberar conexão de Instagram sem tester manual

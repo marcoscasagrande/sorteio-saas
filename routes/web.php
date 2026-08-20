@@ -7,6 +7,8 @@ use App\Http\Controllers\Admin\ReportController as AdminReportController;
 use App\Http\Controllers\Admin\SettingsController as AdminSettingsController;
 use App\Http\Controllers\Admin\UserController as AdminUserController;
 use App\Http\Controllers\Auth\AuthenticatedSessionController;
+use App\Http\Controllers\Auth\NewPasswordController;
+use App\Http\Controllers\Auth\PasswordResetLinkController;
 use App\Http\Controllers\Auth\RegisteredUserController;
 use App\Http\Controllers\Auth\TwoFactorChallengeController;
 use App\Http\Controllers\GiveawayController;
@@ -34,6 +36,11 @@ Route::middleware('guest')->group(function () {
     Route::post('/registrar', [RegisteredUserController::class, 'store']);
     Route::get('/login', [AuthenticatedSessionController::class, 'create'])->name('login');
     Route::post('/login', [AuthenticatedSessionController::class, 'store']);
+
+    Route::get('/esqueci-senha', [PasswordResetLinkController::class, 'create'])->name('password.request');
+    Route::post('/esqueci-senha', [PasswordResetLinkController::class, 'store'])->name('password.email');
+    Route::get('/redefinir-senha/{token}', [NewPasswordController::class, 'create'])->name('password.reset');
+    Route::post('/redefinir-senha', [NewPasswordController::class, 'store'])->name('password.update');
 
     // 2FA do admin — acessível só depois de validar a senha (ver controller)
     Route::get('/dois-fatores', [TwoFactorChallengeController::class, 'create'])->name('two-factor.challenge');
