@@ -1,0 +1,17 @@
+; No aaPanel: instale o plugin "Supervisor Manager" (App Store) e adicione
+; esta configuração por lá — ou cole em /etc/supervisor/conf.d/sorteio-saas.conf
+; se preferir editar direto.
+
+[program:sorteio-saas-queue]
+process_name=%(program_name)s_%(process_num)02d
+command=php /www/wwwroot/seudominio.com/artisan queue:work --sleep=3 --tries=3 --max-time=3600
+directory=/www/wwwroot/seudominio.com
+autostart=true
+autorestart=true
+stopasgroup=true
+killasgroup=true
+user=www
+numprocs=1
+redirect_stderr=true
+stdout_logfile=/www/wwwroot/seudominio.com/storage/logs/queue-worker.log
+stopwaitsecs=3600

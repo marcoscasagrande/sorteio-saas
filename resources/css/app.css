@@ -1,0 +1,52 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer base {
+    body {
+        @apply bg-paper text-ink font-sans antialiased;
+    }
+    h1, h2, h3 {
+        @apply font-display;
+    }
+}
+
+@layer components {
+    /* Bilhete de sorteio — a peça de assinatura visual do produto.
+       Borda serrilhada simulando um ticket de rifa, com o número/hash
+       em mono no canto, como um número de série real. */
+    .ticket {
+        @apply relative bg-card rounded-lg overflow-hidden;
+        border: 1px solid rgba(16, 24, 22, 0.08);
+        background-image:
+            radial-gradient(circle at left, transparent 8px, white 8.5px),
+            radial-gradient(circle at right, transparent 8px, white 8.5px);
+        background-position: left center, right center;
+        background-size: 1px 100%, 1px 100%;
+        background-repeat: no-repeat;
+    }
+    .ticket::before {
+        content: '';
+        @apply absolute inset-y-0 left-0 border-l border-dashed;
+        left: 8px;
+        border-color: rgba(16, 24, 22, 0.15);
+    }
+
+    .btn-primary {
+        @apply bg-teal text-white px-5 py-2.5 rounded-lg font-medium text-sm
+               hover:bg-teal-dark transition-colors;
+    }
+    .btn-secondary {
+        @apply border border-ink/15 text-ink px-5 py-2.5 rounded-lg font-medium text-sm
+               hover:bg-ink/5 transition-colors;
+    }
+    .badge-gold {
+        @apply bg-gold-light text-gold-dark text-xs font-mono px-2 py-1 rounded;
+    }
+    .badge-teal {
+        @apply bg-teal-light text-teal-dark text-xs font-mono px-2 py-1 rounded;
+    }
+    .badge-coral {
+        @apply bg-coral-light text-coral text-xs font-mono px-2 py-1 rounded;
+    }
+}

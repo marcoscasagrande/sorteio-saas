@@ -1,0 +1,37 @@
+# Cole isso no aaPanel: Website > Add Site > (depois) "Set" > "Config File" (Nginx)
+# Ou: Website > seudominio > Config File
+
+server {
+    listen 80;
+    server_name seudominio.com www.seudominio.com;
+    root /www/wwwroot/seudominio.com/public;   # aponta pra pasta /public do Laravel
+    index index.php index.html;
+
+    access_log /www/wwwlogs/seudominio.com.log;
+    error_log  /www/wwwlogs/seudominio.com.error.log;
+
+    # Depois de emitir o SSL pelo aaPanel (Let's Encrypt), ele adiciona
+    # automaticamente o bloco de redirecionamento HTTPS aqui em cima.
+
+    location / {
+        try_files $uri $uri/ /index.php?$query_string;
+    }
+
+    location ~ \.php$ {
+        fastcgi_pass unix:/tmp/php-cgi-83.sock;   # ajuste pra versão do PHP configurada no aaPanel
+        fastcgi_index index.php;
+        include fastcgi.conf;
+        fastcgi_param SCRIPT_FILENAME $document_root$fastcgi_script_name;
+    }
+
+    location ~ /\.(?!well-known).* {
+        deny all;
+    }
+
+    location ~* \.(js|css|png|jpg|jpeg|gif|ico|svg|woff|woff2)$ {
+        expires 30d;
+        access_log off;
+    }
+
+    client_max_body_size 20m;
+}
