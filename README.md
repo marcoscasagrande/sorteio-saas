@@ -38,8 +38,10 @@ bash deploy/deploy.sh
 - **Usuários** — lista com busca, detalhe por usuário
 - **Vendas** (`/admin/relatorio-de-vendas`) — filtro por período, faturamento,
   ticket médio, gráfico diário, lista de pagamentos
-- **Planos** (`/admin/planos`) — CRUD completo de planos de assinatura
-  (nome, preço, período, limite de sorteios, destaque, ativo/inativo) —
+- **Planos** (`/admin/planos`) — CRUD completo de dois tipos de plano:
+  **moedas** (pacote pago uma vez, cada sorteio consome 1 moeda) e
+  **uso ilimitado** (mensal ou anual, todo sorteio liberado automaticamente
+  enquanto ativo) — preço, quantidade de moedas e período editáveis,
   exibidos automaticamente na Home quando ativos
 - **Logs de auditoria** (`/admin/logs`) — login, sorteios realizados/refeitos,
   pagamentos aprovados, com filtro por ação
@@ -58,6 +60,9 @@ bash deploy/deploy.sh
 - **Preview dos comentários elegíveis** antes de sortear
 - **Hash SHA-256** de auditoria + link público de comprovação
   (`/verificar/{hash}`), sem exigir login
+- **Liberação por moeda ou acesso ilimitado**: se o usuário tem saldo de
+  moedas, pode liberar o sorteio gastando 1 sem passar pelo Pix; com acesso
+  ilimitado ativo, todo sorteio libera sozinho, direto
 - **Selo HTML embutível** — o organizador copia e cola no próprio site
 - **Re-sorteio com 1 clique** — o resultado anterior fica registrado no
   histórico, visível na página de comprovação
