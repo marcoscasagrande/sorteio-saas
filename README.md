@@ -8,6 +8,11 @@ re-sorteio, selo embutível, busca de comentários em fila, revelação com
 confete, planos por moeda ou uso ilimitado, e liberação automática via Pix
 (Mercado Pago) — tudo com preços e limites editáveis pelo admin.
 
+Este é um **projeto Laravel 11 completo** — `composer.json`, `artisan`,
+`bootstrap/`, `public/index.php`, `config/`, `storage/`, tudo incluído.
+Não precisa rodar `composer create-project` antes: é só clonar e seguir
+a instalação abaixo.
+
 ---
 
 ## 🔑 Acesso padrão do admin
